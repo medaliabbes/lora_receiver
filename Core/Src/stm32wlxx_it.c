@@ -21,6 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32wlxx_it.h"
+#include "stdio.h"
+#include "uart_driver.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -57,6 +59,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern UART_HandleTypeDef huart1;
+
 extern SUBGHZ_HandleTypeDef hsubghz;
 /* USER CODE BEGIN EV */
 
@@ -206,12 +209,14 @@ void SysTick_Handler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
+	if(__HAL_UART_GET_IT(&huart1 , UART_IT_RXNE) == SET)
+	{
+		uint8_t recv = huart1.Instance->RDR ;
+		uart_RX_interrupt_hanlder(recv) ;
+	}
 
-  /* USER CODE END USART1_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
+  //HAL_UART_IRQHandler(&huart1);
 
-  /* USER CODE END USART1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

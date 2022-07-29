@@ -1,0 +1,6 @@
+uart_driver.c:14:6:set_NL_detection	4	static
+uart_driver.c:19:6:clear_NL_detection	4	static
+uart_driver.c:24:6:get_NL_detection	4	static
+uart_driver.c:30:6:uart_driver_init	32	static
+uart_driver.c:38:6:uart_RX_interrupt_hanlder	16	static
+uart_driver.c:49:5:uart_read_line	24	static

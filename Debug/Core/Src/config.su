@@ -1,0 +1,3 @@
+config.c:8:6:config_init	8	static
+config.c:15:5:config_save	40	static
+config.c:48:6:config_load	32	static

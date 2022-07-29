@@ -4,8 +4,20 @@
 
 #include "main.h"
 #include "stdio.h"
+#include "stdlib.h"
 #include "radio.h"
 #include "subghz_phy_app.h"
+#include "uart_driver.h"
+#include "config.h"
+#include "string.h"
+
+
+#define CONFIG_PASSWORD        "root123"
+#define STATE_IDLE 				0x00  //
+#define STATE_WAIT_PASSWORD		0x01  //
+#define STATE_PASS_ACCEPTED		0x02
+#define STATE_GET_CONFIG		0x03
+#define STATE_SAVE	    		0x04
 
 
 UART_HandleTypeDef huart1;
@@ -15,6 +27,11 @@ extern const struct Radio_s Radio;
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 void SystemClock_Config(void) ;
+void config_debit_seuil(char * input , int input_len) ;
+
+
+config_t config_param ;
+config_t config_param_copy ; // this should be loaded from the flash
 
 int main(void)
 {
@@ -27,18 +44,114 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   SubghzApp_Init();
+
+  uart_driver_init() ;
+
   //Radio.Rx(1000);
+
   printf("Yes we did 'it!!\n");
+  printf("enter your config\n");
+
+  HAL_Delay(1000);
+
+  config_init();
+
+  config_load(&config_param) ;
+
+  memcpy(&config_param_copy , &config_param , sizeof(config_t));
+
+  printf("param seuil %f , debit %f\n",config_param.seuil , config_param.debit) ;
+
+  char str[50] ;
+
   while (1)
   {
-    /* USER CODE END WHILE */
-	  //printf("stm32wle5jc\n");
-	  PingPong_Process() ;
-    /* USER CODE BEGIN 3 */
+	  /* USER CODE END WHILE */
+
+	  //PingPong_Process() ;
+
+	  int len = uart_read_line(str) ;
+
+	  config_debit_seuil(str , len) ;
+
   }
   /* USER CODE END 3 */
 }
 
+
+
+
+void config_debit_seuil(char * input , int input_len)
+{
+	static unsigned char config_state = STATE_IDLE ;
+	//printf("con debit :%s ,%d\n" ,input , input_len) ;
+	input[input_len] = '\0' ;
+	switch(config_state)
+	{
+	case STATE_IDLE :
+		if(strncmp("config" ,input , 6)==0 && input_len -1 == 6)
+		{
+			//make transition here
+			config_state = STATE_WAIT_PASSWORD ;
+			printf("enter passwor\n") ;
+		}
+		break ;
+
+	case STATE_WAIT_PASSWORD :
+
+		if(strncmp(CONFIG_PASSWORD , input , strlen(CONFIG_PASSWORD)) == 0
+				&& input_len - 1 == strlen(CONFIG_PASSWORD))
+		{
+			config_state = STATE_GET_CONFIG ;
+			printf("enter your config\n");
+		}
+		break ;
+
+	case STATE_GET_CONFIG :
+
+		if(strncmp("seuil:" , input ,6) == 0 && input_len >= 6)
+		{
+			printf("%s\n" , input) ;
+			char seu[10] ;
+			strncpy(seu , &input[6] , input_len -7) ;
+			config_param_copy.seuil = atof(seu) ;
+			(void)seu ;
+		}
+		else if(strncmp("debit:" , input ,6) == 0 && input_len >= 6)
+		{
+			printf("%s\n" , input) ;
+			char deb[10] ;
+			strncpy(deb , &input[6] ,input_len -7 ) ;
+
+			//config_param_copy
+			config_param_copy.debit = atof(deb) ;
+			(void) deb ;
+		}
+		else if(strncmp("save" , input ,4 ) == 0 && input_len -1 == 4)
+		{
+			config_state = STATE_SAVE ;
+			memcpy(&config_param ,&config_param_copy , sizeof(config_param));
+		}
+		else if(strncmp("discard" , input ,7) == 0 && input_len -1 == 7)
+		{
+			//can reload the struct config from the flash
+			memcpy(&config_param_copy , &config_param , sizeof(config_t)) ;
+			config_state = STATE_IDLE ;
+			printf("idle\n");
+		}
+		break ;
+
+	case STATE_SAVE :
+		//save to the flash
+		printf("saved\n");
+		config_save(&config_param_copy) ;
+		config_state = STATE_IDLE ;
+		break ;
+
+	default :
+		break ;
+	}
+}
 
 /**
   * @brief System Clock Configuration
@@ -84,10 +197,8 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+
+
 
 /**
   * @brief USART1 Initialization Function
@@ -115,6 +226,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
     Error_Handler();
@@ -132,9 +244,9 @@ static void MX_USART1_UART_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN USART1_Init 2 */
-
+  __NVIC_EnableIRQ(USART1_IRQn);
+  __NVIC_SetPriority(USART1_IRQn , 0x1);
   /* USER CODE END USART1_Init 2 */
-
 }
 
 /**
@@ -168,6 +280,14 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
+
+int __io_getchar(void)
+{
+	int ch ;
+	HAL_UART_Receive(&huart1 , (uint8_t*)&ch , 1 ,0xffff);
+	return ch ;
+}
+
 int __io_putchar(int ch)
 {
 	HAL_UART_Transmit(&huart1 , (uint8_t*) &ch,1,10);
