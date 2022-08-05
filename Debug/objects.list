@@ -35,3 +35,6 @@
 "./SubGHz_Phy/stm32_radio_driver/radio.o"
 "./SubGHz_Phy/stm32_radio_driver/radio_driver.o"
 "./SubGHz_Phy/stm32_radio_driver/radio_fw.o"
+"./protocole/src/list.o"
+"./protocole/src/ll.o"
+"./protocole/src/packet.o"

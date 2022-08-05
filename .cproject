@@ -49,6 +49,7 @@
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 									<listOptionValue builtIn="false" value="&quot;../Drivers\BSP\STM32WLxx_Nucleo&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;../middlewares\SubGHz_Phy&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Users\medali\Desktop\project lora upwork\LoRa\protocole\inc&quot;"/>
 								</option>
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.extra.1004830292" name="Enable extra warning flags (-Wextra)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.warnings.extra" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.270548291" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
@@ -80,6 +81,7 @@
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="SubGHz_Phy"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="protocole/src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

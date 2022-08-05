@@ -234,6 +234,8 @@ static void OnTxDone(void)
   State = TX;
 }
 
+#include "packet.h"
+
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo)
 {
     /* USER CODE BEGIN OnRxDone */
@@ -244,7 +246,14 @@ static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraS
 	printf( "recv : %s\n\r" , recv);
 
 	free(recv) ;
-
+	packet_t p ;
+	if(packet_desirialize(payload , size , &p) ==PACK_OK)
+	{
+		debug_packet(&p) ;
+	}
+	else{
+		printf("packet corrupt\n");
+	}
 	printf( "RssiValue=%d dBm, SnrValue=%ddB\n\r", rssi, LoraSnr_FskCfo);
     /* Record payload Signal to noise ratio in Lora*/
     SnrValue = LoraSnr_FskCfo;
@@ -306,7 +315,7 @@ uint8_t state  = STATE_LISTEN ;
 void PingPong_Process(void)
 {
 
-  static uint8_t send_counter = 0 ;
+  static uint8_t send_counter = 0   ;
   //static uint8_t recv_counter = 0 ;
 
   Radio.Sleep();

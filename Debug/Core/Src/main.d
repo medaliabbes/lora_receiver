@@ -36,7 +36,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_system.h \
  ../middlewares/SubGHz_Phy/radio.h ../middlewares/SubGHz_Phy/radio_ex.h \
  ../Core/Inc/subghz_phy_app.h ../Core/Inc/uart_driver.h \
- ../Core/Inc/main.h ../Core/Inc/config.h
+ ../Core/Inc/main.h ../Core/Inc/config.h \
+ C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/proto_types.h \
+ C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/ll.h \
+ C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/packet.h \
+ C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/proto_types.h
 
 ../Core/Inc/main.h:
 
@@ -121,3 +125,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/main.h:
 
 ../Core/Inc/config.h:
+
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/proto_types.h:
+
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/ll.h:
+
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/packet.h:
+
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/proto_types.h:

@@ -1,0 +1,11 @@
+packet.c:8:6:packet	16	static
+packet.c:18:6:packet_set_src	16	static
+packet.c:23:6:packet_set_dest	16	static
+packet.c:28:6:packet_set_type	16	static
+packet.c:33:6:packet_set_payload	24	static
+packet.c:46:6:packet_set_id	16	static
+packet.c:51:6:debug_packet	24	static
+packet.c:84:5:packet_serialize	32	static
+packet.c:118:5:packet_desirialize	32	static
+packet.c:143:16:check_sum	32	static
+packet.c:174:5:packet_get_size	16	static

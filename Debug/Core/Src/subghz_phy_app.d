@@ -42,7 +42,9 @@ Core/Src/subghz_phy_app.o: ../Core/Src/subghz_phy_app.c \
  ../Core/Inc/stm32wlxx_nucleo_conf.h \
  ../Drivers/BSP/STM32WLxx_Nucleo/stm32wlxx_nucleo_radio.h \
  ../Core/Inc/subghz_phy_app.h ../middlewares/SubGHz_Phy/radio.h \
- ../middlewares/SubGHz_Phy/radio_ex.h ../Core/Inc/app_version.h
+ ../middlewares/SubGHz_Phy/radio_ex.h ../Core/Inc/app_version.h \
+ C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/packet.h \
+ C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/proto_types.h
 
 ../Core/Inc/platform.h:
 
@@ -135,3 +137,7 @@ Core/Src/subghz_phy_app.o: ../Core/Src/subghz_phy_app.c \
 ../middlewares/SubGHz_Phy/radio_ex.h:
 
 ../Core/Inc/app_version.h:
+
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/packet.h:
+
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/protocole/inc/proto_types.h:

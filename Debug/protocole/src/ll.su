@@ -1,0 +1,9 @@
+ll.c:24:6:find_packet_by_Id	24	static
+ll.c:38:5:ll_init	16	static
+ll.c:48:12:ll_send_packet	72	static
+ll.c:71:5:ll_send_ASK	16	static
+ll.c:76:5:ll_send_NANK	16	static
+ll.c:81:5:ll_send_to	24	static
+ll.c:86:5:get_tx_size	8	static
+ll.c:91:6:ll_transmit	32	static
+ll.c:152:6:ll_debug_tx_list	24	static

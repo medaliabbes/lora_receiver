@@ -25,4 +25,5 @@ Core/Startup \
 Drivers/BSP/STM32WLxx_Nucleo \
 Drivers/STM32WLxx_HAL_Driver/Src \
 SubGHz_Phy/stm32_radio_driver \
+protocole/src \
 

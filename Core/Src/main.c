@@ -11,6 +11,9 @@
 #include "config.h"
 #include "string.h"
 
+#include "proto_types.h"
+#include "ll.h"
+
 
 #define CONFIG_PASSWORD        "root123"
 #define STATE_IDLE 				0x00  //
@@ -19,6 +22,10 @@
 #define STATE_GET_CONFIG		0x03
 #define STATE_SAVE	    		0x04
 
+extern void sys_delay(u32 x)
+{
+	HAL_Delay(x);
+}
 
 UART_HandleTypeDef huart1;
 
@@ -38,22 +45,21 @@ int main(void)
 
   HAL_Init();
 
-
   SystemClock_Config();
 
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   SubghzApp_Init();
 
-  uart_driver_init() ;
+  //Rx pin should not be floating
+  //uart_driver_init() ;
 
   //Radio.Rx(1000);
 
   printf("Yes we did 'it!!\n");
   printf("enter your config\n");
 
-  HAL_Delay(1000);
-
+  /************load configuration from flash and print it ************/
   config_init();
 
   config_load(&config_param) ;
@@ -62,7 +68,13 @@ int main(void)
 
   printf("param seuil %f , debit %f\n",config_param.seuil , config_param.debit) ;
 
-  char str[50] ;
+  /********************************************************************/
+  //Radio.Rx(1000);
+  ll_init(52) ;
+
+   ll_send_to(77 , (u8*)"medali" , 6);
+
+  ll_send_to(77 , (u8*)"abbes" , 5);
 
   while (1)
   {
@@ -70,9 +82,14 @@ int main(void)
 
 	  //PingPong_Process() ;
 
-	  int len = uart_read_line(str) ;
+	  HAL_Delay(1000);
 
-	  config_debit_seuil(str , len) ;
+	  ll_transmit();
+
+
+	  //int len = uart_read_line(str) ;
+
+	  //config_debit_seuil(str , len) ;
 
   }
   /* USER CODE END 3 */
@@ -93,7 +110,7 @@ void config_debit_seuil(char * input , int input_len)
 		{
 			//make transition here
 			config_state = STATE_WAIT_PASSWORD ;
-			printf("enter passwor\n") ;
+			printf("enter password\n") ;
 		}
 		break ;
 
@@ -146,6 +163,8 @@ void config_debit_seuil(char * input , int input_len)
 		printf("saved\n");
 		config_save(&config_param_copy) ;
 		config_state = STATE_IDLE ;
+		printf("NEW CONFIGURATION : seuil :%f ,debit : %f \n"
+				,config_param.seuil ,config_param.debit) ;
 		break ;
 
 	default :

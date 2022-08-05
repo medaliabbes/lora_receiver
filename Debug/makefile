@@ -9,6 +9,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include protocole/src/subdir.mk
 -include SubGHz_Phy/stm32_radio_driver/subdir.mk
 -include Drivers/STM32WLxx_HAL_Driver/Src/subdir.mk
 -include Drivers/BSP/STM32WLxx_Nucleo/subdir.mk
