@@ -40,6 +40,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
+#include "ll.h"
 /* USER CODE BEGIN Includes */
 /*
 #include "stm32_timer.h"
@@ -103,7 +104,7 @@ static RadioEvents_t RadioEvents;
 /*Ping Pong FSM states */
 static States_t State = RX;
 /* App Rx Buffer*/
-static uint8_t BufferRx[MAX_APP_BUFFER_SIZE];
+//static uint8_t BufferRx[MAX_APP_BUFFER_SIZE];
 /* App Tx Buffer*/
 static uint8_t BufferTx[MAX_APP_BUFFER_SIZE];
 /* Last  Received Buffer Size*/
@@ -232,12 +233,14 @@ void SubghzApp_Init(void)
 static void OnTxDone(void)
 {
   /* USER CODE BEGIN OnTxDone */
-  printf( "OnTxDone\n\r");
+
+  ll_set_transmition_done() ;
   /* Update the State of the FSM*/
   State = TX;
+  printf( "OnTxDone\n\r");
 }
 
-#include "ll.h"
+
 
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo)
 {

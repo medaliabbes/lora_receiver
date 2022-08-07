@@ -25,6 +25,7 @@ u32 number_of_received_packet = 0;
 
 u8  device_address         = 0xFF ;
 
+bool tarnsmition_done = false ;
 
 bool find_packet_by_Id(void* packet_id ,void* arg2 )
 {
@@ -54,12 +55,19 @@ bool rx_find_by_id(void * pid , void * arg2)
 	}
 }
 
+/**
+ * initialize Rx and Tx lists of packets
+ * and mode device in Receive Mode
+ */
 int ll_init(u8 addr)
 {
 	device_address = addr ;
 
 	Tx_packet_list = list_new(&find_packet_by_Id , &free) ;//find packet by id to remove it later
 	Rx_packet_list = list_new(&rx_find_by_id , &free) ;//find packet by src
+
+
+	Radio.Rx(1000);
 
 	return 0 ;
 }
@@ -135,42 +143,60 @@ void ll_transmit(void)
 		packet_serialize(pack , buff) ;
 
 		//send to network
-		Radio.Send(buff , packet_size) ;
+		if(buff != NULL)
+		{
+			Radio.Send(buff , packet_size) ;
+			//wait for the transmition to complete
+			while(tarnsmition_done == false);
+		}
+		else if(buff == NULL)
+		{
+			printf("\npacket_serialize FAILED\n");
+		}
+		// small delay or wait for TxDone interrupt
 
 		//increment number of transmition
 
 		holder->number_of_transmition++ ;
 
+		// small delay so the buffer get transmitted then release the memory
+		//sys_delay(100) ;
+
+
 		free(buff) ;
 		
+		tarnsmition_done = false ;
 		/*
 		 * if packet is a NANK then remove the packet from Tx list
 		 */
-
+		printf("\nclear tx done for next packet\n");
 		if(pack->type == PACK_TYPE_NANK)
 		{
+			printf("\rm NANK Packet\n");
 			list_remove(Tx_packet_list ,node) ;
-			free(pack->payload) ;
+			//free(pack->payload) ;
 			free(pack) ;
 			free(holder);
 			free(node) ;
 		}
 
-
+		printf("incriment p t\n");
 		network_transmit_index++;
 		// should remove packets with number of transmition >= 2 (packet transmited 3 time) 
 		
 		// can define a time out for the packet to leave the list 
 
-		// small delay or wait for TxDone interrupt
-		sys_delay(100) ;
-
 		// remove the packet that sent equal or more than the maximum
 		if(holder->number_of_transmition >= MAX_NUMBER_OF_TRANSMITION)
 		{
-			//free memory
+			printf("\nfree memory\n");
+
 			list_remove(Tx_packet_list , node) ;
-			free(pack->payload) ;
+			if(pack->type == PACK_TYPE_DATA)
+			{
+				free(pack->payload) ;
+			}
+
 			free(pack) ;
 			free(holder);
 			free(node);
@@ -420,4 +446,24 @@ int  ll_get_recv_from(u8 src ,u8 *data )
 	}
 	// navigated the list and no data packet from src ,return 0
 	return 0 ;
+}
+
+
+u32 process_tmr = 0;
+//this function should manage send and receive operations
+void ll_process(void)
+{
+	ll_process_received();
+    if(sys_get_tick() - process_tmr > 1000)
+    {
+	    ll_transmit() ;
+	    Radio.Rx(1000);
+	    process_tmr = sys_get_tick() ;
+    }
+}
+
+
+void ll_set_transmition_done()
+{
+	tarnsmition_done = true ;
 }

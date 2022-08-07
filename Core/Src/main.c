@@ -80,7 +80,6 @@ int main(void)
 
   /********************************************************************/
 #ifdef RECEIVER
-  //Radio.Rx(1000);
 
   ll_init(77) ;
 
@@ -98,8 +97,6 @@ int main(void)
 
 #endif
 
-  Radio.Rx(1000);
-  uint32_t tmr = HAL_GetTick();
 
   u8 recv[20] ;
 
@@ -110,14 +107,8 @@ int main(void)
 	  //PingPong_Process() ;
 
 	  //HAL_Delay(1000);
-	  ll_process_received();
-	  if(HAL_GetTick() - tmr > 1000)
-	  {
-		  ll_transmit() ;
-		  Radio.Rx(1000);
-		  tmr = HAL_GetTick() ;
-	  }
 
+	  ll_process() ;
 
 #ifdef RECEIVER
 

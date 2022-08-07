@@ -52,4 +52,7 @@ void ll_debug_tx_list() ;
 //this function should be called in ll_process ,it will remove the tx packet that got a response
 void ll_process_received() ;
 
+//should be called whene TxDone
+void ll_set_transmition_done() ;
+
 #endif /*_LINK_LAYER_H_*/
