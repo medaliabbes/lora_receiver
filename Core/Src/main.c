@@ -36,7 +36,7 @@ u8  sys_random() {
 	return get_random() % 255 ;
 }
 
-//#define RECEIVER
+#define RECEIVER
 
 
 UART_HandleTypeDef huart1;
@@ -128,7 +128,7 @@ int main(void)
 		  recv[len] = 0 ;
 		  printf("data from %d :   %s\n" , 52 ,recv) ;
 
-		  if(memcmp(recv,"medali" , 6) == 0)
+		  if(memcmp(recv,"medali" , 6) == 0 )
 			  {
 				  ll_send_to(52 , (u8*)"abbes" , 5);
 			  }

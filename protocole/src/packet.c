@@ -141,7 +141,7 @@ int packet_desirialize(u8 * buffer,int buffer_len , packet_t * pack)
 	return PACK_OK ;
 }
 
-unsigned short check_sum(u8 * buffer , int len)
+u16 check_sum(u8 * buffer , int len)
 {	
 	int i = 0 ;
 	
@@ -168,7 +168,7 @@ unsigned short check_sum(u8 * buffer , int len)
 		sum += carry ;
 	}
 	
-	return (unsigned short)(0xffff - sum) ;
+	return (u16)(0xffff - sum) ;
 }
 
 

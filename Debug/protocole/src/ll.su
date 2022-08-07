@@ -9,5 +9,5 @@ ll.c:107:5:get_tx_size	8	static
 ll.c:112:6:ll_transmit	32	static
 ll.c:188:6:ll_debug_tx_list	24	static
 ll.c:199:6:ll_receive	72	static
-ll.c:255:6:ll_process_received	48	static
-ll.c:384:6:ll_get_recv_from	40	static
+ll.c:250:6:ll_process_received	48	static
+ll.c:381:6:ll_get_recv_from	40	static

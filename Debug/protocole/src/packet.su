@@ -7,5 +7,5 @@ packet.c:46:6:packet_set_id	16	static
 packet.c:51:6:debug_packet	24	static
 packet.c:84:5:packet_serialize	32	static
 packet.c:118:5:packet_desirialize	32	static
-packet.c:144:16:check_sum	32	static
+packet.c:144:5:check_sum	32	static
 packet.c:175:5:packet_get_size	16	static

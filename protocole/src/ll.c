@@ -117,11 +117,11 @@ void ll_transmit(void)
 		return ;
 	// in case there is  data 
 
-
+	printf("\nNetwork Transmit number of Packet %d\n" ,list_size(Tx_packet_list) );
 	// add timer here
 	while(network_transmit_index < list_size(Tx_packet_list))
 	{
-		printf("network transmit\n");
+
 		struct list_node * node = list_index(Tx_packet_list , network_transmit_index) ;
 		packet_holder_t	* holder = (packet_holder_t*)node->data ;
 		packet_t * pack = &(holder)->packet ;
@@ -177,7 +177,7 @@ void ll_transmit(void)
 			printf("packet removed \ndeallocating memory\n");
 		}
 	}
-
+	printf("\nNetwork Transmit Done\n");
 
 	if(network_transmit_index >= list_size(Tx_packet_list))
 	{
@@ -245,11 +245,6 @@ void ll_receive(u8 * payload , int size)
 
 	number_of_received_packet++; // this variable to count number of coming packet
 
-	/*
-	 printf("Rx_packet_list Size :%d ,coming packet %d\n" , list_size(Rx_packet_list)
-			,number_of_received_packet) ;
-			*/
-
 }
 
 void ll_process_received()
@@ -293,6 +288,7 @@ void ll_process_received()
 			//if no match in tx list drop the packet
 			if(tx_data_node == NULL )
 			{
+				printf("\nDROP ASK PACKET\n");
 				//drop the ASK packet from Rx list
 				list_remove(Rx_packet_list , n);
 
@@ -374,6 +370,7 @@ void ll_process_received()
 		(void) holder ;
 		(void) n ;
 	}
+
 	if(rx_packet_index > list_size(Rx_packet_list))
 	{
 		rx_packet_index = 0;
@@ -407,6 +404,11 @@ int  ll_get_recv_from(u8 src ,u8 *data )
 			int data_length =  pack->payload_length ;
 			memcpy(data , pack->payload , data_length) ;
 
+			if( holder->number_of_transmition == 0)
+			{
+				printf("ASK send From ll_get_recv_from\n");
+				ll_send_ASK(pack->src , pack->id) ;
+			}
 			//remove the node and free memory
 			list_remove(Rx_packet_list , node) ;
 			free(pack->payload) ;
