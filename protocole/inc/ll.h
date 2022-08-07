@@ -18,6 +18,7 @@ struct packet_holder
 {
     packet_t packet ;
     int transmition_time ;
+    int recv_time ;
     int number_of_transmition ;
 } ;
 
@@ -28,24 +29,27 @@ int ll_init(u8 addr);
 
 void ll_process(void) ;
 
-int ll_send_ASK(u8 dest) ;
+int ll_send_ASK(u8 dest ,u8 id) ;
 
-int ll_send_NANK(u8 dest) ;
+int ll_send_NANK(u8 dest ,u8 id) ;
 
 //send a data packet 
 int ll_send_to(u8 dest ,u8 *data ,int data_len) ;
 
-//check Rx queue for data from the dest (return a payload length and copy the payload in data)
-int  ll_get_recv_from(u8 dest ,u8 *data );
+//check Rx list for data from the dest (return a payload length and copy the payload in data)
+int  ll_get_recv_from(u8 src ,u8 *data );
 
 //do the actuel transmition , should be called from ll_process
 void ll_transmit(void) ;
 
 //get the received data ,converted into packet_t type and put it in Rx queue 
-void ll_receive(void) ;
+void ll_receive(u8 * payload , int size) ;
 
 int get_tx_size() ;
 
 void ll_debug_tx_list() ;
+
+//this function should be called in ll_process ,it will remove the tx packet that got a response
+void ll_process_received() ;
 
 #endif /*_LINK_LAYER_H_*/

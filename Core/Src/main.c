@@ -27,6 +27,18 @@ extern void sys_delay(u32 x)
 	HAL_Delay(x);
 }
 
+extern u32 sys_get_tick()
+{
+	return HAL_GetTick() ;
+}
+
+u8  sys_random() {
+	return get_random() % 255 ;
+}
+
+//#define RECEIVER
+
+
 UART_HandleTypeDef huart1;
 
 extern const struct Radio_s Radio;
@@ -54,8 +66,6 @@ int main(void)
   //Rx pin should not be floating
   //uart_driver_init() ;
 
-  //Radio.Rx(1000);
-
   printf("Yes we did 'it!!\n");
   printf("enter your config\n");
 
@@ -69,12 +79,29 @@ int main(void)
   printf("param seuil %f , debit %f\n",config_param.seuil , config_param.debit) ;
 
   /********************************************************************/
+#ifdef RECEIVER
   //Radio.Rx(1000);
+
+  ll_init(77) ;
+
+  printf("Node receiver \n");
+
+#else
+
+  printf("Node transmiter\n") ;
+
   ll_init(52) ;
 
-   ll_send_to(77 , (u8*)"medali" , 6);
+  ll_send_to(77 , (u8*)"medali" , 6);
 
-  ll_send_to(77 , (u8*)"abbes" , 5);
+  //ll_send_to(77 , (u8*)"abbes" , 5);
+
+#endif
+
+  Radio.Rx(1000);
+  uint32_t tmr = HAL_GetTick();
+
+  u8 recv[20] ;
 
   while (1)
   {
@@ -82,9 +109,39 @@ int main(void)
 
 	  //PingPong_Process() ;
 
-	  HAL_Delay(1000);
+	  //HAL_Delay(1000);
+	  ll_process_received();
+	  if(HAL_GetTick() - tmr > 1000)
+	  {
+		  ll_transmit() ;
+		  Radio.Rx(1000);
+		  tmr = HAL_GetTick() ;
+	  }
 
-	  ll_transmit();
+
+#ifdef RECEIVER
+
+	  int len = ll_get_recv_from( 52,recv) ;
+
+	  if(len>0)
+	  {
+		  recv[len] = 0 ;
+		  printf("data from %d :   %s\n" , 52 ,recv) ;
+
+		  if(memcmp(recv,"medali" , 6) == 0)
+			  {
+				  ll_send_to(52 , (u8*)"abbes" , 5);
+			  }
+	  }
+#else
+	  int len = ll_get_recv_from( 77,recv) ;
+	  if(len>0)
+	  	  {
+	  		  recv[len] = 0 ;
+	  		  printf("data from %d :   %s\n" , 77 ,recv) ;
+
+	  	  }
+#endif
 
 
 	  //int len = uart_read_line(str) ;

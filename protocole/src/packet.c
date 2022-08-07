@@ -122,12 +122,13 @@ int packet_desirialize(u8 * buffer,int buffer_len , packet_t * pack)
 		
 	u16 cal_checksum  = check_sum(buffer , buffer_len -2) ;
 	
-	/*printf("calc : %x %x , pack : %x %x\n" , MSB16(cal_checksum ),LSB16(cal_checksum ) 
-	, buffer[buffer_len -2] ,buffer[buffer_len -1] ); 
-	*/
 	//printf("cal %x , pac %x\n" , cal_checksum , pack_checksum);
 	if(cal_checksum != pack_checksum)
+	{
+		printf("\nCHECKSUM ERROR\n") ;
 		return PACK_CHECKSUM_ERROR ;
+	}
+
 	
 	pack->src  = buffer[1] ;
 	pack->dest = buffer[0] ;

@@ -13,5 +13,8 @@
 
 void sys_delay(u32 x) ;
 
+u32 sys_get_tick() ;
+
+u8  sys_random() ;
 
 #endif /*_PROTO_TYPES_H_*/

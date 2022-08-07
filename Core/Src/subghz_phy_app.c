@@ -164,7 +164,10 @@ static void OnRxError(void);
   */
 
 /* USER CODE END PFP */
-
+uint32_t get_random()
+{
+	return Radio.Random() ;
+}
 /* Exported functions ---------------------------------------------------------*/
 void SubghzApp_Init(void)
 {
@@ -234,43 +237,30 @@ static void OnTxDone(void)
   State = TX;
 }
 
-#include "packet.h"
+#include "ll.h"
 
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo)
 {
     /* USER CODE BEGIN OnRxDone */
-	printf( "OnRxDone\n\r");
-	char * recv = (char*) malloc(sizeof(char) * (size +1));
-	memcpy(recv , payload , size) ;
-	recv[size] = '\0' ;
-	printf( "recv : %s\n\r" , recv);
+	printf("RxDone\n");
+	ll_receive(payload , size) ;
 
-	free(recv) ;
-	packet_t p ;
-	if(packet_desirialize(payload , size , &p) ==PACK_OK)
-	{
-		debug_packet(&p) ;
-	}
-	else{
-		printf("packet corrupt\n");
-	}
-	printf( "RssiValue=%d dBm, SnrValue=%ddB\n\r", rssi, LoraSnr_FskCfo);
-    /* Record payload Signal to noise ratio in Lora*/
+	/*
     SnrValue = LoraSnr_FskCfo;
 
-    /* Update the State of the FSM*/
+
     State = RX;
-    /* Clear BufferRx*/
+
 	memset(BufferRx, 0, MAX_APP_BUFFER_SIZE);
-	/* Record payload size*/
+
 	RxBufferSize = size;
 	if (RxBufferSize <= MAX_APP_BUFFER_SIZE)
 	{
 		memcpy(BufferRx, payload, RxBufferSize);
 	}
-	/* Record Received Signal Strength*/
+
 	RssiValue = rssi;
-	/* Record payload content*/
+	*/
 
 }
 

@@ -1,7 +1,8 @@
-subghz_phy_app.c:169:6:SubghzApp_Init	56	static
-subghz_phy_app.c:229:13:OnTxDone	8	static
-subghz_phy_app.c:239:13:OnRxDone	40	static
-subghz_phy_app.c:277:13:OnTxTimeout	8	static
-subghz_phy_app.c:285:13:OnRxTimeout	8	static
-subghz_phy_app.c:296:13:OnRxError	8	static
-subghz_phy_app.c:315:6:PingPong_Process	16	static
+subghz_phy_app.c:167:10:get_random	8	static
+subghz_phy_app.c:172:6:SubghzApp_Init	56	static
+subghz_phy_app.c:232:13:OnTxDone	8	static
+subghz_phy_app.c:242:13:OnRxDone	24	static
+subghz_phy_app.c:267:13:OnTxTimeout	8	static
+subghz_phy_app.c:275:13:OnRxTimeout	8	static
+subghz_phy_app.c:286:13:OnRxError	8	static
+subghz_phy_app.c:305:6:PingPong_Process	16	static

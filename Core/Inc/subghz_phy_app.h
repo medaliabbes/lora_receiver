@@ -136,6 +136,8 @@ void SubghzApp_Init(void);
 void PingPong_Process(void);
 /* USER CODE END EFP */
 
+uint32_t get_random() ;
+
 #ifdef __cplusplus
 }
 #endif
