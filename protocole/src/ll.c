@@ -314,38 +314,47 @@ void ll_process_received()
 			//if no match in tx list drop the packet
 			if(tx_data_node == NULL )
 			{
-				printf("\nDROP ASK PACKET\n");
 				//drop the ASK packet from Rx list
+
+
 				list_remove(Rx_packet_list , n);
 
 				//free memory
-				free(packet->payload) ;
+				//free(packet->payload) ;
 				free(packet) ;
 				free(holder) ;
 				free(n);
+
+				printf("\nDROP ASK PACKET\n");
 			}
 
 			//in case of match in tx list ,send a NANK and remove the data packet from tx list
 			else
 			{
-				printf("ASK match data\n");
-				//send NANK
-				ll_send_NANK(packet->src , packet->id) ;
-				//remove data from Tx list to do not get send again
-
-				list_remove( Tx_packet_list ,tx_data_node) ;
+				printf("ASK match packet ");
 
 				packet_holder_t* h =(packet_holder_t*)tx_data_node->data ;
 				packet_t * pack_p = (packet_t *)&(h->packet);
-				//free memory
-				free(pack_p->payload) ;
-				free(pack_p) ;
-				free(h);
-				free(tx_data_node) ;
+				if(pack_p->type == PACK_TYPE_DATA)
+				{
+					//send NANK
+					ll_send_NANK(packet->src , packet->id) ;
+					//remove data from Tx list to do not get send again
+
+					list_remove( Tx_packet_list ,tx_data_node) ;
+					//free memory
+					free(pack_p->payload) ;
+					free(pack_p) ;
+					free(h);
+					free(tx_data_node) ;
+					printf("data NANK send\n");
+				}
+
+				printf("not data\n");
 				(void) h;
 				(void) pack_p ;
-			}
 
+			}
 
 		}
 
@@ -353,7 +362,7 @@ void ll_process_received()
 		{
 			// check the packet id in Tx list if exist resent the data and remove the packet
 			// NANK indicate data received by receiver
-			printf("\nNANK RECV\n");
+			printf("\nNANK RECV  id %d\n" , packet->id);
 
 			struct list_node * tx_ask_node = list_search(Tx_packet_list ,(void*) packet->id) ;
 

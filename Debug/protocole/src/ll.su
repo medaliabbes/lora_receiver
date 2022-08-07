@@ -10,6 +10,6 @@ ll.c:120:6:ll_transmit	32	static
 ll.c:214:6:ll_debug_tx_list	24	static
 ll.c:225:6:ll_receive	72	static
 ll.c:276:6:ll_process_received	48	static
-ll.c:407:6:ll_get_recv_from	40	static
-ll.c:454:6:ll_process	8	static
-ll.c:466:6:ll_set_transmition_done	4	static
+ll.c:416:6:ll_get_recv_from	40	static
+ll.c:463:6:ll_process	8	static
+ll.c:475:6:ll_set_transmition_done	4	static
