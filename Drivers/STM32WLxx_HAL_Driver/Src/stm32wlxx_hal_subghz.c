@@ -1189,7 +1189,7 @@ HAL_StatusTypeDef HAL_SUBGHZ_ReadBuffer(SUBGHZ_HandleTypeDef *hsubghz,
     return HAL_BUSY;
   }
 }
-#include "stdio.h"
+//#include "stdio.h"
 
 /**
   * @brief  Handle SUBGHZ interrupt request.
@@ -1224,7 +1224,7 @@ void HAL_SUBGHZ_IRQHandler(SUBGHZ_HandleTypeDef *hsubghz)
 #if (USE_HAL_SUBGHZ_REGISTER_CALLBACKS == 1U)
     hsubghz->RxCpltCallback(hsubghz);
 #else
-    printf("rx callback\n\r");
+     //printf("rx callback\n\r");
     HAL_SUBGHZ_RxCpltCallback(hsubghz);
 #endif /* USE_HAL_SUBGHZ_REGISTER_CALLBACKS */
   }

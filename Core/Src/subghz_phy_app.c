@@ -40,21 +40,11 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
+
+#include "proto_types.h"
 #include "ll.h"
-/* USER CODE BEGIN Includes */
-/*
-#include "stm32_timer.h"
-#include "stm32_seq.h"
-#include "utilities_def.h"
-*/
-/* USER CODE END Includes */
 
-/* External variables ---------------------------------------------------------*/
-/* USER CODE BEGIN EV */
 
-/* USER CODE END EV */
-
-/* Private typedef -----------------------------------------------------------*/
 
 /* USER CODE BEGIN PTD */
 typedef enum
@@ -235,9 +225,13 @@ static void OnTxDone(void)
   /* USER CODE BEGIN OnTxDone */
 
   ll_set_transmition_done() ;
+  //State_transiton_tx_done() ;
   /* Update the State of the FSM*/
-  State = TX;
+  //State = TX;
+#ifdef PROT_DEBUG
   printf( "OnTxDone\n\r");
+#endif
+
 }
 
 
@@ -245,7 +239,9 @@ static void OnTxDone(void)
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo)
 {
     /* USER CODE BEGIN OnRxDone */
+#ifdef PROT_DEBUG
 	printf("RxDone\n");
+#endif
 	ll_receive(payload , size) ;
 
 	/*

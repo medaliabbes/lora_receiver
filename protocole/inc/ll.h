@@ -14,6 +14,15 @@
 
 #define  MAX_NUMBER_OF_TRANSMITION   (5) //the maximum number of time a packet is transmitted to the network 
 
+#define  LL_RX_TIMEOUT 		(1000)
+
+typedef enum lib_state{ State_recv ,  // RX mode
+						State_recv_proc, //Process rx packets
+						State_transmit , //transmit PAckets
+						State_list_clear //check list for timeout packets
+						} lib_state_t;
+
+
 struct packet_holder
 {
     packet_t packet ;
@@ -54,5 +63,13 @@ void ll_process_received() ;
 
 //should be called whene TxDone
 void ll_set_transmition_done() ;
+
+/*
+void State_transiton_tx_done() ;
+
+void State_transition_resp_to_send() ;
+
+void State_transition_valide_packet();
+*/
 
 #endif /*_LINK_LAYER_H_*/

@@ -17,4 +17,7 @@ u32 sys_get_tick() ;
 
 u8  sys_random() ;
 
+//to enable library debugging uncomment the above line
+//#define PROT_DEBUG
+
 #endif /*_PROTO_TYPES_H_*/

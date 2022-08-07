@@ -32,11 +32,11 @@ extern u32 sys_get_tick()
 	return HAL_GetTick() ;
 }
 
-u8  sys_random() {
+extern u8  sys_random() {
 	return get_random() % 255 ;
 }
 
-#define RECEIVER
+//#define RECEIVER
 
 
 UART_HandleTypeDef huart1;
@@ -93,8 +93,6 @@ int main(void)
 
   ll_send_to(77 , (u8*)"medali" , 6);
 
-  //ll_send_to(77 , (u8*)"abbes" , 5);
-
 #endif
 
 
@@ -102,11 +100,7 @@ int main(void)
 
   while (1)
   {
-	  /* USER CODE END WHILE */
 
-	  //PingPong_Process() ;
-
-	  //HAL_Delay(1000);
 
 	  ll_process() ;
 
