@@ -42,7 +42,7 @@ extern u8  sys_random()
 	return get_random() % 255 ;
 }
 
-#define RECEIVER
+//#define RECEIVER
 
 
 UART_HandleTypeDef huart1;
@@ -122,6 +122,7 @@ int main(void)
 
   char data[50];
   char str[50] ;
+  u8 recv_data[50] ;
 #endif
 
 
@@ -184,6 +185,16 @@ int main(void)
 	  		  }
 
 	  	  }
+
+	  	  int recv_data_len = ll_get_recv_from( RECEIVER_ADDRESS , recv_data) ;
+
+	  	  if(recv_data_len > 0)
+	  	  {
+	  		recv_data[recv_data_len ] = 0 ;
+
+	  		printf("receiver :%s\n" , recv_data) ;
+	  	  }
+
 #endif
 
 	  ll_process() ;
@@ -291,6 +302,7 @@ void close_vanne()
 {
 
 }
+
 #endif
 
 
