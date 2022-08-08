@@ -55,9 +55,20 @@ void SystemClock_Config(void) ;
 void config_debit_seuil(char * input , int input_len) ;
 
 #ifndef RECEIVER
+
 int parse_commande(char *input ,int input_len , u8 * adress , float * seuil , int * periode ) ;
+
 #else
 int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode) ;
+
+float get_seuil(int periode)  ;
+
+void open_vanne() ;
+
+void close_vanne() ;
+
+int number_of_pulses  = 0;
+
 #endif
 
 config_t config_param ;
@@ -95,7 +106,13 @@ int main(void)
 
   config_load(&config_param) ;
   printf("Node receiver \n");
+
+  char feedback[50];
   u8 recv[50] ;
+  u8 send_feedback = 0 ;
+  uint32_t feedback_timer = 0;
+  int feedback_periode = 0 ;
+
 #else
   uart_driver_init() ;
 
@@ -125,8 +142,22 @@ int main(void)
 		  int periode ;
 		  parse_transmetter_data((char*)recv , len ,&seuil,&periode ) ;
 		  printf("config seuil :%0.2f, per :%d\n",seuil , periode);
+		  send_feedback = 1 ;
+		  feedback_periode = periode * 1000;
+		  feedback_timer =  HAL_GetTick() ;
 
-		  //seva config
+		  //save config
+	  }
+
+	  if(send_feedback == 1)
+	  {
+		  if(HAL_GetTick() - feedback_timer >= feedback_periode )
+		  {
+			  sprintf(feedback ,"seuil :%f" ,get_seuil(feedback_periode));
+			  ll_send_to(TRANSMITTER_ADDRESS ,(u8*) feedback , strlen(feedback) );
+			  feedback_timer =  HAL_GetTick() ;
+			  printf("feedback send\n");
+		  }
 	  }
 
 #else
@@ -244,6 +275,21 @@ int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode
 	//printf("per :%s$\n" , per);
 
 	return 0 ;
+}
+
+float get_seuil(int periode)
+{
+	return number_of_pulses / periode ;
+}
+
+void open_vanne()
+{
+
+}
+
+void close_vanne()
+{
+
 }
 #endif
 
