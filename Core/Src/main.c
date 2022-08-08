@@ -10,9 +10,14 @@
 #include "uart_driver.h"
 #include "config.h"
 #include "string.h"
-
 #include "proto_types.h"
 #include "ll.h"
+
+#define TRANSMITTER_ADDRESS    (52)
+#define RECEIVER_ADDRESS 	   (77)
+
+
+
 
 
 #define CONFIG_PASSWORD        "root123"
@@ -32,11 +37,12 @@ extern u32 sys_get_tick()
 	return HAL_GetTick() ;
 }
 
-extern u8  sys_random() {
+extern u8  sys_random()
+{
 	return get_random() % 255 ;
 }
 
-//#define RECEIVER
+#define RECEIVER
 
 
 UART_HandleTypeDef huart1;
@@ -48,6 +54,11 @@ static void MX_USART1_UART_Init(void);
 void SystemClock_Config(void) ;
 void config_debit_seuil(char * input , int input_len) ;
 
+#ifndef RECEIVER
+int parse_commande(char *input ,int input_len , u8 * adress , float * seuil , int * periode ) ;
+#else
+int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode) ;
+#endif
 
 config_t config_param ;
 config_t config_param_copy ; // this should be loaded from the flash
@@ -64,71 +75,87 @@ int main(void)
   SubghzApp_Init();
 
   //Rx pin should not be floating
-  //uart_driver_init() ;
 
-  printf("Yes we did 'it!!\n");
-  printf("enter your config\n");
 
   /************load configuration from flash and print it ************/
-  config_init();
 
-  config_load(&config_param) ;
+  //config_init();
 
-  memcpy(&config_param_copy , &config_param , sizeof(config_t));
+  //config_load(&config_param) ;
 
-  printf("param seuil %f , debit %f\n",config_param.seuil , config_param.debit) ;
+  //memcpy(&config_param_copy , &config_param , sizeof(config_t));
+
+  //printf("param seuil %f , debit %f\n",config_param.seuil , config_param.debit) ;
 
   /********************************************************************/
 #ifdef RECEIVER
 
-  ll_init(77) ;
+  ll_init(RECEIVER_ADDRESS) ;
+  config_init();
 
+  config_load(&config_param) ;
   printf("Node receiver \n");
-
+  u8 recv[50] ;
 #else
+  uart_driver_init() ;
 
-  printf("Node transmiter\n") ;
+  printf("Node transmitter\n") ;
 
-  ll_init(52) ;
+  ll_init(TRANSMITTER_ADDRESS) ;
 
-  ll_send_to(77 , (u8*)"medali" , 6);
-
+  char data[50];
+  char str[50] ;
 #endif
 
-
-  u8 recv[20] ;
 
   while (1)
   {
 
 
-	  ll_process() ;
 
 #ifdef RECEIVER
 
-	  int len = ll_get_recv_from( 52,recv) ;
+	  int len = ll_get_recv_from( TRANSMITTER_ADDRESS , recv) ;
 
 	  if(len>0)
 	  {
 		  recv[len] = 0 ;
-		  printf("data from %d :   %s\n" , 52 ,recv) ;
+		  printf("data from %d: %s$\n" , 52 ,recv) ;
+		  float seuil ;
+		  int periode ;
+		  parse_transmetter_data((char*)recv , len ,&seuil,&periode ) ;
+		  printf("config seuil :%0.2f, per :%d\n",seuil , periode);
 
-		  if(memcmp(recv,"medali" , 6) == 0 )
-			  {
-				  ll_send_to(52 , (u8*)"abbes" , 5);
-			  }
+		  //seva config
 	  }
+
 #else
-	  int len = ll_get_recv_from( 77,recv) ;
-	  if(len>0)
+	  // transmitter code
+	  int len = uart_read_line(str) ;
+
+	  	  if(len>0)
 	  	  {
-	  		  recv[len] = 0 ;
-	  		  printf("data from %d :   %s\n" , 77 ,recv) ;
+	  		  str[len] = 0 ;
+
+	  		  printf("serial :%s$\n" , str);
+
+	  		  u8 node_address ;
+	  		  float seuil ;
+	  		  int periode ;
+
+	  		  if( parse_commande(str ,len,&node_address , &seuil , &periode ) == 0 )
+	  		  {
+	  			  printf("input adr %d , seuil %f ,periode %d\n" , node_address , seuil , periode);
+
+	  			  sprintf(data , "seuil :%0.2f , periode : %d",seuil , periode);
+
+	  			  ll_send_to(node_address , (u8*)data , strlen(data));
+	  		  }
 
 	  	  }
 #endif
 
-
+	  ll_process() ;
 	  //int len = uart_read_line(str) ;
 
 	  //config_debit_seuil(str , len) ;
@@ -136,6 +163,89 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
+
+#ifndef RECEIVER
+int parse_commande(char *input ,int input_len , u8 * adress , float * seuil , int * periode )
+{
+
+	char tmp[6] ;
+	//commande format :config node %d,se %f,pe %d
+	if(input_len < 21)
+	{
+		return -1 ;
+	}
+	char *node = strstr(input , "config node ") ;
+	if( node == NULL )
+	{
+		return -1 ;
+	}
+	node += 12 ;
+
+	char * se = strstr(&input[12] , ",se ") ;
+	if( se == NULL)
+	{
+		return -1 ;
+	}
+
+	memcpy(tmp ,node, se - node ) ;
+	*adress = atoi(tmp) ;
+	//printf("node Address %d\n" ,*adress);
+	se += 4 ;
+
+	char * pe = strstr(&input[16] ,",pe" );
+	if( pe == NULL)
+	{
+		return -1 ;
+	}
+
+	memcpy(tmp ,se, pe -se ) ;
+	*seuil = atof(tmp) ;
+	//printf("seuil %f\n" ,*seuil);
+	pe +=4 ;
+
+	memcpy(tmp ,pe, (input +input_len) - pe ) ;
+	*periode = atoi(tmp) ;
+	//printf("periode %d\n" ,*pe);
+
+	(void) tmp ;
+	return 0 ;
+}
+#else
+int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode)
+{
+	char tmp[6] ;
+
+	//seuil :%0.2f , periode : %d
+	char * per = strstr(t_data , ", periode :");
+
+	if(per == NULL)
+	{
+		return -1 ;
+	}
+
+	char * se = strstr(t_data , "seuil :");
+
+	if(se == NULL)
+	{
+		return -1;
+	}
+
+	se += 7 ;
+	memcpy(tmp , se, per - se);
+	*seuil = atof(tmp) ;
+
+	//printf("seuil %0.2f\n" , *seuil);
+
+	per += 12;
+	memcpy(tmp , per ,(t_data+len - 1) - per) ;
+
+	*periode = atoi(per) ;
+	//printf("periode %d \n" , *periode );
+	//printf("per :%s$\n" , per);
+
+	return 0 ;
+}
+#endif
 
 
 

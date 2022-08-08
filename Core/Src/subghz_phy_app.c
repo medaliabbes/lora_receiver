@@ -163,7 +163,7 @@ uint32_t get_random()
 void SubghzApp_Init(void)
 {
   /* USER CODE BEGIN SubghzApp_Init_1 */
-  printf( "\n\rPING PONG\n\r");
+  //printf( "\n\rPING PONG\n\r");
   /* Print APP version*/
   printf( "APP_VERSION= V%X.%X.%X\r\n",
           (uint8_t)(__APP_VERSION >> __APP_VERSION_MAIN_SHIFT),
@@ -208,7 +208,7 @@ void SubghzApp_Init(void)
   /*fills tx buffer*/
   memset(BufferTx, 0x0, MAX_APP_BUFFER_SIZE);
 
-  printf( "rand=%ld\n\r", random_delay);
+  //printf( "rand=%ld\n\r", random_delay);
   /*starts reception*/
   Radio.Rx(RX_TIMEOUT_VALUE + random_delay);
 
