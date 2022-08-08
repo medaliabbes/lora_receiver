@@ -13,7 +13,7 @@
 
 
  __attribute__((packed))struct config{
-	float debit ;
+	int periode ;
 	float seuil ;
 };
 

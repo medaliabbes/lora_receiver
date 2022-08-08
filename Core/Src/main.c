@@ -18,14 +18,7 @@
 
 
 
-
-
-#define CONFIG_PASSWORD        "root123"
-#define STATE_IDLE 				0x00  //
-#define STATE_WAIT_PASSWORD		0x01  //
-#define STATE_PASS_ACCEPTED		0x02
-#define STATE_GET_CONFIG		0x03
-#define STATE_SAVE	    		0x04
+// transmeteur commande format :config node %d,se %f,pe %d
 
 extern void sys_delay(u32 x)
 {
@@ -42,7 +35,7 @@ extern u8  sys_random()
 	return get_random() % 255 ;
 }
 
-//#define RECEIVER
+#define RECEIVER
 
 
 UART_HandleTypeDef huart1;
@@ -52,16 +45,16 @@ extern const struct Radio_s Radio;
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 void SystemClock_Config(void) ;
-void config_debit_seuil(char * input , int input_len) ;
 
 #ifndef RECEIVER
 
 int parse_commande(char *input ,int input_len , u8 * adress , float * seuil , int * periode ) ;
 
 #else
+
 int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode) ;
 
-float get_seuil(int periode)  ;
+float get_flow(int periode)  ;
 
 void open_vanne() ;
 
@@ -71,8 +64,6 @@ int number_of_pulses  = 0;
 
 #endif
 
-config_t config_param ;
-config_t config_param_copy ; // this should be loaded from the flash
 
 int main(void)
 {
@@ -85,27 +76,20 @@ int main(void)
   MX_USART1_UART_Init();
   SubghzApp_Init();
 
-  //Rx pin should not be floating
 
-
-  /************load configuration from flash and print it ************/
-
-  //config_init();
-
-  //config_load(&config_param) ;
-
-  //memcpy(&config_param_copy , &config_param , sizeof(config_t));
-
-  //printf("param seuil %f , debit %f\n",config_param.seuil , config_param.debit) ;
-
-  /********************************************************************/
 #ifdef RECEIVER
 
-  ll_init(RECEIVER_ADDRESS) ;
+  config_t param ;
+
   config_init();
 
-  config_load(&config_param) ;
+  config_load(&param) ;
+
+  printf("saved param seuil %f , periode %d\n",param.seuil , param.periode) ;
+
   printf("Node receiver \n");
+
+  ll_init(RECEIVER_ADDRESS) ;
 
   char feedback[50];
   u8 recv[50] ;
@@ -139,12 +123,16 @@ int main(void)
 	  {
 		  recv[len] = 0 ;
 		  printf("data from %d: %s$\n" , 52 ,recv) ;
-		  float seuil ;
-		  int periode ;
-		  parse_transmetter_data((char*)recv , len ,&seuil,&periode ) ;
-		  printf("config seuil :%0.2f, per :%d\n",seuil , periode);
+		  //float seuil ;
+		  //int periode ;
+		  parse_transmetter_data((char*)recv , len ,&param.seuil,&param.periode ) ;
+		  printf("config seuil :%0.2f, per :%d\n",param.seuil , param.periode);
+
+		  //save to the flash
+		  config_save(&param) ;
+
 		  send_feedback = 1 ;
-		  feedback_periode = periode * 1000;
+		  feedback_periode = param.periode * 1000;
 		  feedback_timer =  HAL_GetTick() ;
 
 		  //save config
@@ -154,7 +142,11 @@ int main(void)
 	  {
 		  if(HAL_GetTick() - feedback_timer >= feedback_periode )
 		  {
-			  sprintf(feedback ,"seuil :%f" ,get_seuil(feedback_periode));
+			  sprintf(feedback ,"seuil :%f" ,get_flow(feedback_periode));
+
+			  //reset the count of pulse
+			  number_of_pulses = 0 ;
+
 			  ll_send_to(TRANSMITTER_ADDRESS ,(u8*) feedback , strlen(feedback) );
 			  feedback_timer =  HAL_GetTick() ;
 			  printf("feedback send\n");
@@ -198,10 +190,6 @@ int main(void)
 #endif
 
 	  ll_process() ;
-	  //int len = uart_read_line(str) ;
-
-	  //config_debit_seuil(str , len) ;
-
   }
   /* USER CODE END 3 */
 }
@@ -288,7 +276,8 @@ int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode
 	return 0 ;
 }
 
-float get_seuil(int periode)
+//debit
+float get_flow(int periode)
 {
 	return number_of_pulses / periode ;
 }
@@ -306,81 +295,6 @@ void close_vanne()
 #endif
 
 
-
-
-void config_debit_seuil(char * input , int input_len)
-{
-	static unsigned char config_state = STATE_IDLE ;
-	//printf("con debit :%s ,%d\n" ,input , input_len) ;
-	input[input_len] = '\0' ;
-	switch(config_state)
-	{
-	case STATE_IDLE :
-		if(strncmp("config" ,input , 6)==0 && input_len -1 == 6)
-		{
-			//make transition here
-			config_state = STATE_WAIT_PASSWORD ;
-			printf("enter password\n") ;
-		}
-		break ;
-
-	case STATE_WAIT_PASSWORD :
-
-		if(strncmp(CONFIG_PASSWORD , input , strlen(CONFIG_PASSWORD)) == 0
-				&& input_len - 1 == strlen(CONFIG_PASSWORD))
-		{
-			config_state = STATE_GET_CONFIG ;
-			printf("enter your config\n");
-		}
-		break ;
-
-	case STATE_GET_CONFIG :
-
-		if(strncmp("seuil:" , input ,6) == 0 && input_len >= 6)
-		{
-			printf("%s\n" , input) ;
-			char seu[10] ;
-			strncpy(seu , &input[6] , input_len -7) ;
-			config_param_copy.seuil = atof(seu) ;
-			(void)seu ;
-		}
-		else if(strncmp("debit:" , input ,6) == 0 && input_len >= 6)
-		{
-			printf("%s\n" , input) ;
-			char deb[10] ;
-			strncpy(deb , &input[6] ,input_len -7 ) ;
-
-			//config_param_copy
-			config_param_copy.debit = atof(deb) ;
-			(void) deb ;
-		}
-		else if(strncmp("save" , input ,4 ) == 0 && input_len -1 == 4)
-		{
-			config_state = STATE_SAVE ;
-			memcpy(&config_param ,&config_param_copy , sizeof(config_param));
-		}
-		else if(strncmp("discard" , input ,7) == 0 && input_len -1 == 7)
-		{
-			//can reload the struct config from the flash
-			memcpy(&config_param_copy , &config_param , sizeof(config_t)) ;
-			config_state = STATE_IDLE ;
-			printf("idle\n");
-		}
-		break ;
-
-	case STATE_SAVE :
-		//save to the flash
-		printf("saved\n");
-		config_save(&config_param_copy) ;
-		config_state = STATE_IDLE ;
-		printf("NEW CONFIGURATION : seuil :%f ,debit : %f \n"
-				,config_param.seuil ,config_param.debit) ;
-		break ;
-
-	default :
-		break ;
-	}
-}
 
 /**
   * @brief System Clock Configuration
