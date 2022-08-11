@@ -96,7 +96,7 @@ int ll_init(u8 addr)
 	return 0 ;
 }
 
-static int ll_send_packet(u8 dest,u8 type ,u8 id, u8 * data ,u8 len)
+static int ll_send_packet(u8 dest,u8 type ,u8 id, u8 * data ,u8 len ,ask_received_callback CallBack)
 {
 	if(list_size(Tx_packet_list) >= TX_PACKET_LIST_SIZE )
 	{
@@ -105,6 +105,7 @@ static int ll_send_packet(u8 dest,u8 type ,u8 id, u8 * data ,u8 len)
 	
 	packet_t  tmp  ;
 	packet_holder_t tmp_holder ;
+	tmp_holder.Ask_callback = CallBack ;
 	
 	packet(&tmp , device_address , dest , type ,id,data , len);
 	
@@ -121,24 +122,29 @@ static int ll_send_packet(u8 dest,u8 type ,u8 id, u8 * data ,u8 len)
 
 int ll_send_ASK(u8 dest ,u8 id)
 {
-	return ll_send_packet(dest , PACK_TYPE_ASK ,id ,NULL , 0);
+	return ll_send_packet(dest , PACK_TYPE_ASK ,id ,NULL , 0 ,NULL);
 }
 
 int ll_send_NANK(u8 dest,u8 id)
 {
-	return ll_send_packet(dest , PACK_TYPE_NANK,id ,NULL , 0);
+	return ll_send_packet(dest , PACK_TYPE_NANK,id ,NULL , 0 ,NULL);
 }
 
-int ll_send_to(u8 dest ,u8 *data ,int data_len) 
+int ll_send_to(u8 dest ,u8 *data ,int data_len ,ask_received_callback CallBack )
 {
 	u8 id = sys_random() ;
 
-	return ll_send_packet(dest , PACK_TYPE_DATA,id ,data , data_len);
+	return ll_send_packet(dest , PACK_TYPE_DATA,id ,data , data_len , CallBack);
 }
 
 int get_tx_size()
 {
 	return list_size(Tx_packet_list)  ;
+}
+
+int get_rx_size()
+{
+	return list_size(Rx_packet_list)  ;
 }
 
 void ll_transmit(void) 
@@ -318,7 +324,19 @@ void ll_process_received()
 		packet_t * packet = (packet_t *) &(holder)->packet ;
 
 		//debug_packet(packet) ;
+		if(sys_get_tick() - holder->recv_time >= 5000 )
+		{
+			list_remove(Rx_packet_list , n);
+			printf("Rx packet timeout\n");
+			if(packet->payload != NULL)
+			{
+				free(packet->payload) ;
+			}
 
+			free(holder) ;
+			free(n) ;
+			printf("removed from list\n");
+		}
 
 		if(packet->type == PACK_TYPE_DATA)
 		{
@@ -378,6 +396,12 @@ void ll_process_received()
 				{
 					//send NANK
 					ll_send_NANK(packet->src , packet->id) ;
+
+					//execute callback function
+					if(h->Ask_callback != NULL)
+					{
+						h->Ask_callback();
+					}
 					//remove data from Tx list to do not get send again
 
 					list_remove( Tx_packet_list ,tx_data_node) ;
@@ -453,7 +477,7 @@ void ll_process_received()
 		(void) n ;
 	}
 
-	if(rx_packet_index > list_size(Rx_packet_list))
+	if(rx_packet_index >= list_size(Rx_packet_list))
 	{
 		rx_packet_index = 0;
 	}
@@ -480,6 +504,7 @@ int  ll_get_recv_from(u8 src ,u8 *data )
 		node = list_index(Rx_packet_list , i) ;
 		holder = (packet_holder_t *) node->data ;
 		pack = (packet_t*)&(holder)->packet ;
+
 
 		if(pack->type == PACK_TYPE_DATA && pack->src == src)
 		{
@@ -508,17 +533,26 @@ int  ll_get_recv_from(u8 src ,u8 *data )
 
 
 u32 process_tmr = 0;
+uint32_t tx_trans_timer  = 1000 ;
 //this function should manage send and receive operations
 void ll_process(void)
 {
 
 	ll_process_received();
-    if(sys_get_tick() - process_tmr > 1000)
+    if(sys_get_tick() - process_tmr >= tx_trans_timer)
     {
 	    ll_transmit() ;
 	    Radio.Rx(1000);
 	    process_tmr = sys_get_tick() ;
     }
+
+    if( get_tx_size() >= LL_TX_BUTTLE_NECK)
+    {
+    	tx_trans_timer = 200 ;
+    }
+
+
+
 
     /*
 
@@ -582,6 +616,16 @@ void ll_process(void)
 	*/
 }
 
+void ll_debug_Rx_list()
+{
+	for(int i =0;i< get_rx_size() ;i++)
+	{
+		struct list_node * node = list_index(Rx_packet_list , i) ;
+		packet_holder_t *  hold = node->data ;
+		packet_t * pp = (packet_t*)&(hold)->packet ;
+		debug_packet(pp) ;
+	}
+}
 
 void ll_set_transmition_done()
 {

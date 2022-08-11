@@ -1,6 +1,9 @@
 
 
-
+/**
+ * callback added
+ * Rx buffer full solved
+ */
 
 #include "main.h"
 #include "stdio.h"
@@ -17,8 +20,13 @@
 #define RECEIVER_ADDRESS 	   (77)
 
 
+//comment this line for transmitter mode
+#define RECEIVER
 
-// transmeteur commande format :config node %d,se %f,pe %d
+// Transmitter command format :config node %d,se %f,pe %d
+
+
+
 
 extern void sys_delay(u32 x)
 {
@@ -35,7 +43,7 @@ extern u8  sys_random()
 	return get_random() % 255 ;
 }
 
-#define RECEIVER
+
 
 
 UART_HandleTypeDef huart1;
@@ -62,6 +70,12 @@ void close_vanne() ;
 
 int number_of_pulses  = 0;
 
+
+void  callBack()
+{
+	printf("Ask CallBack reset counter\n");
+	number_of_pulses = 0 ;
+}
 #endif
 
 
@@ -73,9 +87,10 @@ int main(void)
   SystemClock_Config();
 
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
-  SubghzApp_Init();
 
+  MX_USART1_UART_Init();
+
+  SubghzApp_Init();
 
 #ifdef RECEIVER
 
@@ -96,6 +111,7 @@ int main(void)
   u8 send_feedback = 0 ;
   uint32_t feedback_timer = 0;
   int feedback_periode = 0 ;
+  uint32_t pulse_tmr =  HAL_GetTick() ;
 
 #else
   uart_driver_init() ;
@@ -107,12 +123,14 @@ int main(void)
   char data[50];
   char str[50] ;
   u8 recv_data[50] ;
+
+
 #endif
 
+  uint32_t tx_monitor = HAL_GetTick() ;
 
   while (1)
   {
-
 
 
 #ifdef RECEIVER
@@ -129,7 +147,7 @@ int main(void)
 		  printf("config seuil :%0.2f, per :%d\n",param.seuil , param.periode);
 
 		  //save to the flash
-		  config_save(&param) ;
+		  //config_save(&param) ;
 
 		  send_feedback = 1 ;
 		  feedback_periode = param.periode * 1000;
@@ -142,16 +160,20 @@ int main(void)
 	  {
 		  if(HAL_GetTick() - feedback_timer >= feedback_periode )
 		  {
-			  sprintf(feedback ,"seuil :%f" ,get_flow(feedback_periode));
-
-			  //reset the count of pulse
-			  number_of_pulses = 0 ;
-
-			  ll_send_to(TRANSMITTER_ADDRESS ,(u8*) feedback , strlen(feedback) );
+			  float flow = get_flow(feedback_periode /1000) ;
+			  sprintf(feedback ,"seuil :%f" ,flow);
+			  printf("nb pulse %d ,debit %f ,periode %d\n" ,number_of_pulses ,flow ,feedback_periode) ;
+			  ll_send_to(TRANSMITTER_ADDRESS ,(u8*) feedback , strlen(feedback) ,&callBack );
 			  feedback_timer =  HAL_GetTick() ;
-			  printf("feedback send\n");
 		  }
 	  }
+
+	  if(HAL_GetTick() - pulse_tmr >= 10 )
+	  {
+		  number_of_pulses++ ;
+		  pulse_tmr = HAL_GetTick();
+	  }
+
 
 #else
 	  // transmitter code
@@ -187,7 +209,18 @@ int main(void)
 	  		printf("receiver :%s\n" , recv_data) ;
 	  	  }
 
+
 #endif
+
+	  if(HAL_GetTick() - tx_monitor >= 5000 )
+	  {
+		printf("tx buffer size :%d , rx buffer size :%d\n",get_tx_size(),get_rx_size() );
+		tx_monitor = HAL_GetTick() ;
+		if(get_rx_size() == 10)
+		  {
+			  ll_debug_Rx_list() ;
+		  }
+	  }
 
 	  ll_process() ;
   }
@@ -264,14 +297,10 @@ int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode
 	memcpy(tmp , se, per - se);
 	*seuil = atof(tmp) ;
 
-	//printf("seuil %0.2f\n" , *seuil);
-
 	per += 12;
 	memcpy(tmp , per ,(t_data+len - 1) - per) ;
 
 	*periode = atoi(per) ;
-	//printf("periode %d \n" , *periode );
-	//printf("per :%s$\n" , per);
 
 	return 0 ;
 }
@@ -279,7 +308,7 @@ int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode
 //debit
 float get_flow(int periode)
 {
-	return number_of_pulses / periode ;
+	return (float) (number_of_pulses / periode) ;
 }
 
 void open_vanne()
