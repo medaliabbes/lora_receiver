@@ -323,7 +323,12 @@ void ll_process_received()
 
 		packet_t * packet = (packet_t *) &(holder)->packet ;
 
+
+#ifdef LL_RX_TIMEOUT_REMOVE
 		//debug_packet(packet) ;
+		/*
+		 * if a packet set on the receive list more than 5s it should removed
+		 */
 		if(sys_get_tick() - holder->recv_time >= 5000 )
 		{
 			list_remove(Rx_packet_list , n);
@@ -337,7 +342,7 @@ void ll_process_received()
 			free(n) ;
 			printf("removed from list\n");
 		}
-
+#endif /*LL_RX_TIMEOUT_REMOVE*/
 		if(packet->type == PACK_TYPE_DATA)
 		{
 			// ASK packet should be sent ,the data will be read later
@@ -345,6 +350,10 @@ void ll_process_received()
 
 			//number_of_transmition used to assure that a ASK has been send to confirm data recv
 			//data packet will be removed by ll_get_recv_from
+			/*
+			 * holder->number_of_transmition is used here to indicate if an ASK packet
+			 * was sent to confirm the receive
+			 */
 			if( holder->number_of_transmition == 0)
 			{
 #ifdef PROT_DEBUG
@@ -484,13 +493,61 @@ void ll_process_received()
 
 }
 
-int  ll_get_recv_from(u8 src ,u8 *data )
+/**
+ *
+ */
+int ll_get_recv(u8 * data ,int * len )
 {
-
 
 	int rx_list_size = list_size(Rx_packet_list) ;
 
+	struct list_node * node ;
+	packet_holder_t  * holder ;
+	packet_t         * pack ;
 
+
+	for(int i = 0;i<  rx_list_size ;i++)
+	{
+		node   = list_index(Rx_packet_list , i) ;
+		holder = (packet_holder_t*) node->data ;
+		pack   = (packet_t*) &(holder)->packet ;
+
+		if(pack->type == PACK_TYPE_DATA)
+		{
+			//
+			memcpy(data , pack->payload , pack->payload_length) ;
+			*len = pack->payload_length ;
+
+			int source_node =  pack->src ;
+
+			if(holder->transmition_time == 0)
+			{
+				ll_send_ASK(pack->src , pack->id) ;
+
+			}
+			list_remove(Rx_packet_list , node) ;
+			//remove the packet
+			free(pack->payload) ;
+			free(holder) ;
+			free(node) ;
+
+			return source_node ;
+		}
+
+	}
+
+	(void) node   ;
+	(void) holder ;
+	(void) pack   ;
+
+	*len = 0;
+	return -1 ;
+}
+
+int  ll_get_recv_from(u8 src ,u8 *data )
+{
+
+	int rx_list_size = list_size(Rx_packet_list) ;
 
 	if(rx_list_size == 0)
 		return 0 ;

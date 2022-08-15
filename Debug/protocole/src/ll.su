@@ -11,7 +11,8 @@ ll.c:150:6:ll_transmit	32	static
 ll.c:249:6:ll_debug_tx_list	24	static
 ll.c:260:6:ll_receive	80	static
 ll.c:314:6:ll_process_received	48	static
-ll.c:487:6:ll_get_recv_from	40	static
-ll.c:538:6:ll_process	8	static
-ll.c:619:6:ll_debug_Rx_list	24	static
-ll.c:630:6:ll_set_transmition_done	4	static
+ll.c:499:5:ll_get_recv	40	static
+ll.c:547:6:ll_get_recv_from	40	static
+ll.c:595:6:ll_process	8	static
+ll.c:676:6:ll_debug_Rx_list	24	static
+ll.c:687:6:ll_set_transmition_done	4	static

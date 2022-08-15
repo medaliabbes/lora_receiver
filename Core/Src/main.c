@@ -16,16 +16,17 @@
 #include "proto_types.h"
 #include "ll.h"
 
+
+//#define TEST_NODE_SAVING
+
+
 #define TRANSMITTER_ADDRESS    (52)
 #define RECEIVER_ADDRESS 	   (77)
-
 
 //comment this line for transmitter mode
 #define RECEIVER
 
 // Transmitter command format :config node %d,se %f,pe %d
-
-
 
 
 extern void sys_delay(u32 x)
@@ -98,6 +99,39 @@ int main(void)
 
   config_init();
 
+#ifdef  TEST_NODE_SAVING
+
+  saved_nodes_t myNode ;/* = {
+		  .addresses[0] = 0x14,
+		  .addresses[1] = 0x15,
+		  .nb_addresses = 2,
+		  .valide = 1 ,
+  } ;
+  */
+  if(load_nodes(&myNode) == CONFIG_OK)
+  {
+	  printf("nodes : nb :%d ,addr[0] : %x ,addr[1] : %x\n" ,myNode.nb_addresses
+			  ,myNode.addresses[0],myNode.addresses[1]);
+  }
+  else
+  {
+	  printf("Invalid data\n");
+  }
+
+  /*
+  if( store_nodes(&myNode) == CONFIG_OK)
+  {
+	  printf("Save To The Flash\n");
+  }
+  else{
+	  printf("Error Saving\n");
+  }
+  */
+
+  printf("End\n");
+
+#endif /*TEST_NODE_SAVING*/
+
   config_load(&param) ;
 
   printf("saved param seuil %f , periode %d\n",param.seuil , param.periode) ;
@@ -129,18 +163,23 @@ int main(void)
 
   uint32_t tx_monitor = HAL_GetTick() ;
 
+  int len = 0;
   while (1)
   {
 
 
 #ifdef RECEIVER
 
-	  int len = ll_get_recv_from( TRANSMITTER_ADDRESS , recv) ;
+	  //int len = ll_get_recv_from( TRANSMITTER_ADDRESS , recv) ;
+
+	  //ll_get_recv in test mode
+	  int src = ll_get_recv(recv , &len) ;
+
 
 	  if(len>0)
 	  {
 		  recv[len] = 0 ;
-		  printf("data from %d: %s$\n" , 52 ,recv) ;
+		  printf("data from %d: %s$\n" , src ,recv) ;
 		  //float seuil ;
 		  //int periode ;
 		  parse_transmetter_data((char*)recv , len ,&param.seuil,&param.periode ) ;
@@ -431,6 +470,39 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  GPIO_InitTypeDef pin ;
+  EXTI_ConfigTypeDef exti ;
+  EXTI_HandleTypeDef exti_handler ;
+
+  exti_handler.Line = EXTI_LINE_0 ;
+
+  exti.Line    =  EXTI_LINE_0;
+  exti.Mode    =  EXTI_MODE_INTERRUPT;
+  exti.Trigger =  EXTI_TRIGGER_RISING;
+  exti.GPIOSel =  EXTI_GPIOB;
+
+  /*****************************************/
+  HAL_EXTI_SetConfigLine(&exti_handler , &exti ) ;
+
+  pin.Mode  = GPIO_MODE_IT_RISING ;
+  pin.Pin   = GPIO_PIN_0  ;
+  pin.Pull  = GPIO_PULLDOWN  ;
+  pin.Speed = GPIO_SPEED_FREQ_HIGH ;
+
+  HAL_GPIO_Init(GPIOB , &pin ) ;
+
+  __NVIC_EnableIRQ(EXTI0_IRQn);
+  __NVIC_SetPriority(EXTI0_IRQn , 0x0);
+
+}
+
+void EXTI0_IRQHandler(void)
+{
+
+	number_of_pulses++;
+	printf("int\n");
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0) ;
 
 }
 

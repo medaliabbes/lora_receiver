@@ -6,6 +6,9 @@
 #include "packet.h"
 #include "proto_types.h"
 
+//#define LL_RX_TIMEOUT_REMOVE
+
+
 #define  TX_PACKET_LIST_SIZE         10
 #define  RX_PACKET_LIST_SIZE         10
 
@@ -16,13 +19,15 @@
 
 #define  LL_RX_TIMEOUT 		(1000)
 
-#define LL_TX_BUTTLE_NECK    6 // number of packet that cause transmition to be delayed
+#define  LL_TX_BUTTLE_NECK    6 // number of packet that cause transmition to be delayed
 
-typedef enum lib_state{ State_recv ,  // RX mode
+typedef enum lib_state{
+						State_recv ,  // RX mode
 						State_recv_proc, //Process rx packets
 						State_transmit , //transmit PAckets
 						State_list_clear //check list for timeout packets
-						} lib_state_t;
+						}
+						lib_state_t;
 
 //this function will be executed when a data is transmitted and received by receiver
 typedef void (*ask_received_callback)() ;
@@ -65,14 +70,21 @@ int get_rx_size() ;
 
 void ll_debug_tx_list() ;
 
+/*
+ * data : buffer to copy the received data
+ * len  : pointer that will hold the data length
+ * retutn the address source of data ,or -1 if no recv
+ */
+int ll_get_recv(u8 * data ,int * len ) ;
+
 //this function should be called in ll_process ,it will remove the tx packet that got a response
 void ll_process_received() ;
 
 //should be called whene TxDone
 void ll_set_transmition_done() ;
 
-
 void ll_debug_Rx_list() ;
+
 /*
 void State_transiton_tx_done() ;
 
