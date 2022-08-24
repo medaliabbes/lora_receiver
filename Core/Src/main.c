@@ -1,4 +1,13 @@
 
+/*
+ * Thursday 19/08/2022
+ * added config_save1 , store_nodes1
+ *
+ * those to function does not erase data when they are called after each other
+ * they are tested .
+ *
+ */
+
 
 /**
  * callback added
@@ -17,35 +26,10 @@
 #include "ll.h"
 
 
-//#define TEST_NODE_SAVING
-
-
 #define TRANSMITTER_ADDRESS    (52)
 #define RECEIVER_ADDRESS 	   (77)
 
-//comment this line for transmitter mode
-#define RECEIVER
-
-// Transmitter command format :config node %d,se %f,pe %d
-
-
-extern void sys_delay(u32 x)
-{
-	HAL_Delay(x);
-}
-
-extern u32 sys_get_tick()
-{
-	return HAL_GetTick() ;
-}
-
-extern u8  sys_random()
-{
-	return get_random() % 255 ;
-}
-
-
-
+#define DEFAULT_FEEDBACK_PERIOD		(10*60)  //10 min
 
 UART_HandleTypeDef huart1;
 
@@ -55,210 +39,128 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 void SystemClock_Config(void) ;
 
-#ifndef RECEIVER
 
-int parse_commande(char *input ,int input_len , u8 * adress , float * seuil , int * periode ) ;
-
-#else
 
 int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode) ;
 
 float get_flow(int periode)  ;
 
-void open_vanne() ;
+void open_vanne()  ;
 
 void close_vanne() ;
 
-int number_of_pulses  = 0;
+int number_of_pulses  = 0 ;
 
-
-void  callBack()
+void callBack()
 {
 	printf("Ask CallBack reset counter\n");
 	number_of_pulses = 0 ;
 }
-#endif
 
 
 int main(void)
 {
 
+  int feedback_periode ;
+
   HAL_Init();
 
   SystemClock_Config();
-
-  MX_GPIO_Init();
 
   MX_USART1_UART_Init();
 
   SubghzApp_Init();
 
-#ifdef RECEIVER
+  MX_GPIO_Init();
 
   config_t param ;
 
   config_init();
 
-#ifdef  TEST_NODE_SAVING
+  int sta = config_load(&param) ;
 
-  saved_nodes_t myNode ;/* = {
-		  .addresses[0] = 0x14,
-		  .addresses[1] = 0x15,
-		  .nb_addresses = 2,
-		  .valide = 1 ,
-  } ;
-  */
-  if(load_nodes(&myNode) == CONFIG_OK)
-  {
-	  printf("nodes : nb :%d ,addr[0] : %x ,addr[1] : %x\n" ,myNode.nb_addresses
-			  ,myNode.addresses[0],myNode.addresses[1]);
-  }
-  else
-  {
-	  printf("Invalid data\n");
-  }
-
-  /*
-  if( store_nodes(&myNode) == CONFIG_OK)
-  {
-	  printf("Save To The Flash\n");
-  }
-  else{
-	  printf("Error Saving\n");
-  }
-  */
-
-  printf("End\n");
-
-#endif /*TEST_NODE_SAVING*/
-
-  config_load(&param) ;
+  printf("Node receiver \n");
 
   printf("saved param seuil %f , periode %d\n",param.seuil , param.periode) ;
 
-  printf("Node receiver \n");
+  if(sta == CONFIG_OK)
+  {
+	  printf("Valid data\n");
+
+	  feedback_periode = param.periode ;
+  }
+  else{
+
+	  printf("Invalid data\n");
+
+	  feedback_periode = DEFAULT_FEEDBACK_PERIOD ;
+
+  }
 
   ll_init(RECEIVER_ADDRESS) ;
 
   char feedback[50];
+
   u8 recv[50] ;
-  u8 send_feedback = 0 ;
-  uint32_t feedback_timer = 0;
-  int feedback_periode = 0 ;
-  uint32_t pulse_tmr =  HAL_GetTick() ;
 
-#else
-  uart_driver_init() ;
-
-  printf("Node transmitter\n") ;
-
-  ll_init(TRANSMITTER_ADDRESS) ;
-
-  char data[50];
-  char str[50] ;
-  u8 recv_data[50] ;
-
-
-#endif
+  //to send data whene started
+  uint32_t feedback_timer = HAL_GetTick() + (feedback_periode *1000)+ 1 ;
 
   uint32_t tx_monitor = HAL_GetTick() ;
 
   int len = 0;
+
   while (1)
   {
-
-
-#ifdef RECEIVER
-
-	  //int len = ll_get_recv_from( TRANSMITTER_ADDRESS , recv) ;
-
-	  //ll_get_recv in test mode
 	  int src = ll_get_recv(recv , &len) ;
-
 
 	  if(len>0)
 	  {
 		  recv[len] = 0 ;
+
 		  printf("data from %d: %s$\n" , src ,recv) ;
-		  //float seuil ;
-		  //int periode ;
-		  parse_transmetter_data((char*)recv , len ,&param.seuil,&param.periode ) ;
-		  printf("config seuil :%0.2f, per :%d\n",param.seuil , param.periode);
 
-		  //save to the flash
-		  //config_save(&param) ;
-
-		  send_feedback = 1 ;
-		  feedback_periode = param.periode * 1000;
-		  feedback_timer =  HAL_GetTick() ;
-
-		  //save config
-	  }
-
-	  if(send_feedback == 1)
-	  {
-		  if(HAL_GetTick() - feedback_timer >= feedback_periode )
+		  //Valide transmitter frame
+		  if( parse_transmetter_data((char*)recv , len ,&param.seuil,&param.periode ) == 0)
 		  {
-			  float flow = get_flow(feedback_periode /1000) ;
-			  sprintf(feedback ,"seuil :%f" ,flow);
-			  printf("nb pulse %d ,debit %f ,periode %d\n" ,number_of_pulses ,flow ,feedback_periode) ;
-			  ll_send_to(TRANSMITTER_ADDRESS ,(u8*) feedback , strlen(feedback) ,&callBack );
+			  printf("config seuil :%0.2f, per :%d\n",param.seuil , param.periode);
+			  //save to the flash
+			  config_save1(&param) ;
+
+			  feedback_periode = param.periode ;
+
 			  feedback_timer =  HAL_GetTick() ;
 		  }
+		  else
+		  {
+			  //nope()
+		  }
+
 	  }
 
-	  if(HAL_GetTick() - pulse_tmr >= 10 )
+	  //sending feedback every feedback_periode
+	  if(HAL_GetTick() - feedback_timer >= feedback_periode * 1000)
 	  {
-		  number_of_pulses++ ;
-		  pulse_tmr = HAL_GetTick();
+		  float flow = get_flow(feedback_periode /1000) ;
+		  sprintf(feedback ,"seuil :%f" ,flow);
+		  ll_send_to(TRANSMITTER_ADDRESS ,(u8*) feedback , strlen(feedback) ,&callBack );
+		  printf("nb pulse %d ,debit %f ,periode %d\n" ,number_of_pulses ,flow ,feedback_periode) ;
+		  feedback_timer = HAL_GetTick() ;
 	  }
-
-
-#else
-	  // transmitter code
-	  int len = uart_read_line(str) ;
-
-	  	  if(len>0)
-	  	  {
-	  		  str[len] = 0 ;
-
-	  		  printf("serial :%s$\n" , str);
-
-	  		  u8 node_address ;
-	  		  float seuil ;
-	  		  int periode ;
-
-	  		  if( parse_commande(str ,len,&node_address , &seuil , &periode ) == 0 )
-	  		  {
-	  			  printf("input adr %d , seuil %f ,periode %d\n" , node_address , seuil , periode);
-
-	  			  sprintf(data , "seuil :%0.2f , periode : %d",seuil , periode);
-
-	  			  ll_send_to(node_address , (u8*)data , strlen(data));
-	  		  }
-
-	  	  }
-
-	  	  int recv_data_len = ll_get_recv_from( RECEIVER_ADDRESS , recv_data) ;
-
-	  	  if(recv_data_len > 0)
-	  	  {
-	  		recv_data[recv_data_len ] = 0 ;
-
-	  		printf("receiver :%s\n" , recv_data) ;
-	  	  }
-
-
-#endif
 
 	  if(HAL_GetTick() - tx_monitor >= 5000 )
 	  {
 		printf("tx buffer size :%d , rx buffer size :%d\n",get_tx_size(),get_rx_size() );
 		tx_monitor = HAL_GetTick() ;
-		if(get_rx_size() == 10)
-		  {
-			  ll_debug_Rx_list() ;
-		  }
+	  }
+
+	  if(get_flow(feedback_periode /1000) >= param.seuil)
+	  {
+		  close_vanne() ;
+	  }
+	  else
+	  {
+
 	  }
 
 	  ll_process() ;
@@ -266,53 +168,7 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-#ifndef RECEIVER
-int parse_commande(char *input ,int input_len , u8 * adress , float * seuil , int * periode )
-{
 
-	char tmp[6] ;
-	//commande format :config node %d,se %f,pe %d
-	if(input_len < 21)
-	{
-		return -1 ;
-	}
-	char *node = strstr(input , "config node ") ;
-	if( node == NULL )
-	{
-		return -1 ;
-	}
-	node += 12 ;
-
-	char * se = strstr(&input[12] , ",se ") ;
-	if( se == NULL)
-	{
-		return -1 ;
-	}
-
-	memcpy(tmp ,node, se - node ) ;
-	*adress = atoi(tmp) ;
-	//printf("node Address %d\n" ,*adress);
-	se += 4 ;
-
-	char * pe = strstr(&input[16] ,",pe" );
-	if( pe == NULL)
-	{
-		return -1 ;
-	}
-
-	memcpy(tmp ,se, pe -se ) ;
-	*seuil = atof(tmp) ;
-	//printf("seuil %f\n" ,*seuil);
-	pe +=4 ;
-
-	memcpy(tmp ,pe, (input +input_len) - pe ) ;
-	*periode = atoi(tmp) ;
-	//printf("periode %d\n" ,*pe);
-
-	(void) tmp ;
-	return 0 ;
-}
-#else
 int parse_transmetter_data(char * t_data , int len , float *seuil , int *periode)
 {
 	char tmp[6] ;
@@ -359,8 +215,6 @@ void close_vanne()
 {
 
 }
-
-#endif
 
 
 
@@ -419,13 +273,7 @@ void SystemClock_Config(void)
 static void MX_USART1_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
 
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -471,7 +319,9 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+
   GPIO_InitTypeDef pin ;
+
   EXTI_ConfigTypeDef exti ;
   EXTI_HandleTypeDef exti_handler ;
 
@@ -482,7 +332,7 @@ static void MX_GPIO_Init(void)
   exti.Trigger =  EXTI_TRIGGER_RISING;
   exti.GPIOSel =  EXTI_GPIOB;
 
-  /*****************************************/
+
   HAL_EXTI_SetConfigLine(&exti_handler , &exti ) ;
 
   pin.Mode  = GPIO_MODE_IT_RISING ;
@@ -497,14 +347,16 @@ static void MX_GPIO_Init(void)
 
 }
 
+
 void EXTI0_IRQHandler(void)
 {
-
 	number_of_pulses++;
 	printf("int\n");
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0) ;
 
 }
+
+
 
 /* USER CODE BEGIN 4 */
 
@@ -523,6 +375,21 @@ void Error_Handler(void)
   {
   }
   /* USER CODE END Error_Handler_Debug */
+}
+
+extern void sys_delay(u32 x)
+{
+	HAL_Delay(x);
+}
+
+extern u32  sys_get_tick()
+{
+	return HAL_GetTick() ;
+}
+
+extern u8   sys_random()
+{
+	return get_random() % 255 ;
 }
 
 int __io_getchar(void)

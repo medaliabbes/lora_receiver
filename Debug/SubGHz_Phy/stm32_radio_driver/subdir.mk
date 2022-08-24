@@ -5,9 +5,9 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../middlewares/SubGHz_Phy/stm32_radio_driver/radio.c \
-../middlewares/SubGHz_Phy/stm32_radio_driver/radio_driver.c \
-../middlewares/SubGHz_Phy/stm32_radio_driver/radio_fw.c 
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/middlewares/SubGHz_Phy/stm32_radio_driver/radio.c \
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/middlewares/SubGHz_Phy/stm32_radio_driver/radio_driver.c \
+C:/Users/medali/Desktop/project\ lora\ upwork/LoRa/middlewares/SubGHz_Phy/stm32_radio_driver/radio_fw.c 
 
 OBJS += \
 ./SubGHz_Phy/stm32_radio_driver/radio.o \

@@ -4,7 +4,7 @@
 
 #define 	CONFIG_OK      0x00
 #define 	CONFIG_ERROR   0x01
-
+#define     VALIDE_CONFIGURATION	 (0x4ea1c1)
 
 
 #define ADDR_FLASH_PAGE_127     ((uint32_t)0x0803F800)
@@ -31,11 +31,15 @@ typedef struct saved_nodes saved_nodes_t ;
 void config_init(void) ;
 
 //used by receiver to save maximum flow and sending period
-int config_save(config_t * param) ;
+//int config_save(config_t * param) ;
 
-void config_load(config_t * param) ;
+int config_load(config_t * param) ;
 
 //used by transmitter to store number of nodes and they addresses
 int load_nodes(saved_nodes_t * nodes) ;
 
-int store_nodes(saved_nodes_t * nodes) ;
+//int store_nodes(saved_nodes_t * nodes) ;
+
+int config_save1(config_t * param) ;
+
+int  store_nodes1(saved_nodes_t * nodes) ;
